@@ -1,3 +1,5 @@
 * [指南](zh-cn/guide)
-* [数据库]()
+* [**数据库**]()
     * [MySQL](db/mysql)
+* [**Nginx**]()
+    * [Nginx配置文件](nginx/config)
