@@ -85,5 +85,33 @@ worker_connections NUMBER                   # 绑定的CPU核心每个最大连�
 worker_priorty NUMBER                       # 调整nice值
 ```
 
+## 9. Nginx作为服务器时使用的配置
+注：http{}段配置的参数
+- http{}段：由ngx_http_core_module模块引入
+- http配置主要包含四个区块，结构如下：
+```
+http {                                      ## 协议级别
+ include mime.types;
+ default_type application/octet-stream;
+ keepalive_timeout 65;
+ gzip on;
+ sendfile on;		                        ## 指定nginx是否调用sendfile函数（zero copy）来输出文件，对于普通应用必须设为on；
+ 					                        ## 如果用来进行下载等应用磁盘I/O重负载应用，可设置为OFF，以平衡磁盘与网络I/O处理速度，降低系统的uptime
+ autoindex on;		                        ## 开启目录列表访问，适合下载服务器，默认关闭
+ 	upstream {                              ## 负载均衡配置
+	...
+	}
+ 	server {                                ## 服务器级别，每一个server类似于httpd中的一个<VirtualHost,通俗来说就是一个网站>
+ 		listen80;
+	 	server_name localhost;
+		location / {                        ## 请求级别，类似与httpd中的<Location>，用于定义URL与本地文件系统的映射关系
+		 	root html;
+		 	index index.html index.htm;
+	 	}
+ 	}
+}
+```
+
+
 ## 备注
 - 原文地址：https://blog.csdn.net/WanJiaBaoBao/article/details/83349622
