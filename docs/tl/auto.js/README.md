@@ -16,11 +16,12 @@ Auto.js使用[JavaScript](https://developer.mozilla.org/zh-CN/docs/Web/JavaScrip
 - engines: 脚本引擎。用于启动其他脚本。
 - events: 事件与监听。按键监听，通知监听，触摸监听等。
 - floaty: 悬浮窗。用于显示自定义的悬浮窗。
-files: 文件系统。文件创建、获取信息、读写。
-http: HTTP。发送HTTP请求，例如GET, POST等。
-images, colors: 图片和图色处理。截图，剪切图片，找图找色，读取保存图片等。
-keys: 按键模拟。比如音量键、Home键模拟等。
-shell: Shell命令。
-threads: 多线程支持。
-ui: UI界面。用于显示自定义的UI界面，和用户交互。
+- files: 文件系统。文件创建、获取信息、读写。
+- http: HTTP。发送HTTP请求，例如GET, POST等。
+- images, colors: 图片和图色处理。截图，剪切图片，找图找色，读取保存图片等。
+- keys: 按键模拟。比如音量键、Home键模拟等。
+- shell: Shell命令。
+- threads: 多线程支持。
+- ui: UI界面。用于显示自定义的UI界面，和用户交互。
+
 除此之外，Auto.js内置了对[Promise](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Promise)。
