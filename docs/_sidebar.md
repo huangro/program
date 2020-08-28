@@ -2,7 +2,5 @@
 * [**Java**]()
 * [**Python**]()
 * [**PHP**]()
-* [**MySQL**]()
-    * [MySQL常用方法](db/mysql)
 * [**Nginx**]()
     * [Nginx配置文件](nginx/config)
