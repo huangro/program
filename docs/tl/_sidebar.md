@@ -1,3 +1,5 @@
 * [**Auto.js**]()
   * [综述](tl/auto.js/)
   * [Q&A](tl/auto.js/qa)
+  * [如何阅读本文档](tl/auto.js/doc)
+  * [应用 - App](tl/auto.js/app)
