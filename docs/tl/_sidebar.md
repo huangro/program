@@ -26,3 +26,4 @@
   * [定时器 - Times](tl/auto.js/timers)
   * [用户界面 - UI](tl/auto.js/ui)
   * [调用Java - Work with Java](https://developer.mozilla.org/zh-CN/docs/Mozilla/Projects/Rhino/Scripting_Java)
+  * [脚本示例](tl/auto.js/demo)
