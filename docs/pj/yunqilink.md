@@ -90,7 +90,7 @@ device.status.xxxxx     | string  | 设备最新一次上报的其他状态值
 
 请求
 
-```
+```js
 GET: {domain}/devices
 Content-Type:application/json
 Body:none
@@ -98,7 +98,7 @@ Body:none
 
 回复
 
-```
+```js
 Response-Code: 200
 Body:
 {
@@ -132,7 +132,7 @@ Body:
 
 请求
 
-```
+```js
 GET: {domain}/devices?skip=15&limit=50
 Content-Type:application/json
 Body:none
@@ -148,7 +148,7 @@ Body:none
 
 请求
 
-```
+```js
 GET: {domain}/devices
 Content-Type:application/json
 Body:
@@ -206,7 +206,7 @@ device.status.xxxxx     | string  | 设备最新一次上报的其他状态值
 
 请求
 
-```
+```js
 GET: {domain}/device/0361d124dabd4996/rzRe65wvKLlw4R1EV0KLHrYo8bObQzab
 Content-Type:application/json
 Body:none
@@ -214,7 +214,7 @@ Body:none
 
 回复
 
-```
+```js
 Response-Code: 200
 Body:
 {
@@ -285,7 +285,7 @@ result.xxxxx         | object  | 单条历史记录的其他状态值
 
 请求
 
-```
+```js
 GET: {domain}/device/0361d124dabd4996/rzRe65wvKLlw4R1EV0KLHrYo8bObQzab/history?from=1601410000&to=1601427000
 Content-Type:application/json
 Body:none
@@ -293,7 +293,7 @@ Body:none
 
 回复
 
-```
+```js
 Response-Code: 200
 Body:
 {
@@ -376,7 +376,7 @@ result.xxxxx         | object  | 输出结果的其他状态值（仅限数值�
 
 请求
 
-```
+```js
 GET: {domain}/device/0361d124dabd4996/rzRe65wvKLlw4R1EV0KLHrYo8bObQzab/avg?from=1601410000&to=1601427000
 Content-Type:application/json
 Body:none
@@ -384,7 +384,7 @@ Body:none
 
 回复
 
-```
+```js
 Response-Code: 200
 Body:
 {
@@ -405,4 +405,5 @@ Body:
 }
 ```
 
-
+## 数据库
+采用TDengine时序数据库
