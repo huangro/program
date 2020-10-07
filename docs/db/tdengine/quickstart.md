@@ -15,6 +15,13 @@ docker run tdengine/tdengine
 即可。
 请参考[TDengine官方Docker镜像的发布、下载和使用](https://www.taosdata.com/blog/2020/05/13/1509.html)
 
+可执行脚本：
+```bash
+#!/bin/bash
+
+docker run -d -v /Users/Shared/etc/taos:/etc/taos -p 6030:6030 -p 6035:6035 -p 6041:6041 -p 6030-6040:6030-6040/udp tdengine/tdengine:latest
+```
+
 
 ### 1.3 通过安装包安装
 服务器部分，我们提供三种安装包，您可以根据需要选择。TDengine的安装非常简单，从下载到安装成功仅仅只要几秒钟。
