@@ -2,5 +2,8 @@
     * [概述](pm/java/)
     * [基础](pm/java/basic/)
       * [MapStruct](pm/java/basic/mapstruct)
+    * [框架](pm/java/framework/dubbo/dubbo3)
+      * [Dubbo](pm/java/framework/dubbo/dubbo3)
+        * [Dubbo3.0前瞻](pm/java/framework/dubbo/dubbo3)
     * [实战](pm/java/practice/)
       * [SpringBoot+Netty分布式即时通讯系统](pm/java/practice/springboot-netty)
