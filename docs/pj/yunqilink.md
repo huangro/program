@@ -1,6 +1,6 @@
 # YunQiLink平台
 
-YunQiLink是云栖智造工业物联网数据采集平台。按照部署形式，有两种版本：
+YunQiLink是云栖智造工业物联网平台。按照部署形式，有两种版本：
 
 - 公有云版本
 
@@ -9,6 +9,83 @@ YunQiLink是云栖智造工业物联网数据采集平台。按照部署形式�
 - 私有云版本
 
 云栖智造企业版的组成部分，部署在企业客户的服务器上，根据需要裁减掉部分功能。
+
+## 系统设计
+
+![YunQiLink](../images/yunqilink.png)
+
+YunQiLink作为云栖智造的物联网平台，南向对接数据采集设备，收集数据。对收集的数据进行汇聚和归集，提供基本的查询手段和分析结果。北向对接各种应用服务，为应用服务提供接口访问这些分析结果。
+
+YunQiLink包括以下组成部分
+
+1. MQTT broker
+2. 时序数据库
+3. YunQiLink核心服务程序
+4. Web管理页面
+
+### MQTT broker
+
+选择Moquette 0.12
+
+为支持之前的数据采集功能，设备上传采用Publish，topic为
+
+```
+"/sys/${productKey}/${deviceName}/thing/event/property/post"
+```
+
+payload格式示例如下：
+
+```
+{
+  "messageInfo":{
+    "collectTime":"2020-05-14 23:27:49",
+    "edgeSN":"JKFKBV2"
+  },
+  "params":{
+    "status":1,
+    "count":1000,
+    "speed":120.50,
+    "workOrder":"broa20201021001"
+    ......
+  }
+}
+```
+
+messageInfo包含此次上报的时间和边缘设备SN。
+params包含设备状态，状态字段的值有两种类型，数值类型和字符串类型。如果布尔型，设备端会转成0或1。
+这些状态字段并没有事先定义，YunQiLink可能直到收到上报Publish的内容才直到某个状态字段的存在。
+
+### 时序数据库
+
+选择TDengine
+
+数据库设计要求如下：
+因为单台设备数据量非常庞大，所以重点是读写性能，要充分利用TDengine自带的缓存功能，提高读写性能。
+采用一机一表，每台设备在数据库中采用独立的一张表存储数据记录。
+对所有状态字段在表中创建独立的列，方便利用TDengine的自带功能进行最大值，最小值，平均值的高效运算。
+
+### YunQiLink核心服务程序
+
+完成YunQiLink的主体功能。
+
+采用Java开发。
+阿里的编码规范。
+
+### Web管理界面
+
+提供通用的Web管理界面，满足无特殊要求的工业互联网项目的后台管理需求。
+
+## API接口
+
+### 名词解释
+
+**domain**: 数采服务器地址，具体项目确定
+**pk**: Product Key。产品识别字符串，用来区分设备类型，不通类型产品pk不同，由字母，数字，'_', '-'组成
+**did**: Device ID。设备识别符，同一pk下的不同设备did不同，由字母，数字，'_', '-'组成。
+**appid**: Application ID。应用识别符，用来区分不同的应用程序，手机APP，微信小程序，其他平台等等，由字母，数字，'_', '-'组成。
+**info**: 设备在绑定时，由YunQiLink附加在设备上的信息，如别名，备注，其他附加信息等，设备端并不同步存储info
+**status**: 设备的状态，由设备自身上报，用来指示设备的一些状态或配置信息，如转速、开关等，YunQiLink无法修改设备的status
+
 
 ## 嘉顺项目不包含功能
 
@@ -20,18 +97,7 @@ YunQiLink是云栖智造工业物联网数据采集平台。按照部署形式�
 - 绑定。不支持绑定，因为没有用户，接口访问的对象是所有设备
 - info。不支持绑定信息，因为没有绑定过程，所以暂时没有alias，remark等绑定信息，应用平台暂时自行管理这些
 
-
-## 名词解释
-
-**domain**: 数采服务器地址，具体项目确定
-**pk**: Product Key。产品识别字符串，用来区分设备类型，不通类型产品pk不同，由字母，数字，'_', '-'组成
-**did**: Device ID。设备识别符，同一pk下的不同设备did不同，由字母，数字，'_', '-'组成。
-**appid**: Application ID。应用识别符，用来区分不同的应用程序，手机APP，微信小程序，其他平台等等，由字母，数字，'_', '-'组成。
-**info**: 设备在绑定时，由YunQiLink附加在设备上的信息，如别名，备注，其他附加信息等，设备端并不同步存储info
-**status**: 设备的状态，由设备自身上报，用来指示设备的一些状态或配置信息，如转速、开关等，YunQiLink无法修改设备的status
-
-
-## API列表
+### API列表
 
 Method | URI | 描述
 ----|---|---
@@ -90,7 +156,7 @@ device.status.xxxxx     | string  | 设备最新一次上报的其他状态值
 
 请求
 
-```js
+```
 GET: {domain}/devices
 Content-Type:application/json
 Body:none
@@ -98,7 +164,7 @@ Body:none
 
 回复
 
-```js
+```
 Response-Code: 200
 Body:
 {
@@ -132,7 +198,7 @@ Body:
 
 请求
 
-```js
+```
 GET: {domain}/devices?skip=15&limit=50
 Content-Type:application/json
 Body:none
@@ -148,7 +214,7 @@ Body:none
 
 请求
 
-```js
+```
 GET: {domain}/devices
 Content-Type:application/json
 Body:
@@ -206,7 +272,7 @@ device.status.xxxxx     | string  | 设备最新一次上报的其他状态值
 
 请求
 
-```js
+```
 GET: {domain}/device/0361d124dabd4996/rzRe65wvKLlw4R1EV0KLHrYo8bObQzab
 Content-Type:application/json
 Body:none
@@ -214,7 +280,7 @@ Body:none
 
 回复
 
-```js
+```
 Response-Code: 200
 Body:
 {
@@ -285,7 +351,7 @@ result.xxxxx         | object  | 单条历史记录的其他状态值
 
 请求
 
-```js
+```
 GET: {domain}/device/0361d124dabd4996/rzRe65wvKLlw4R1EV0KLHrYo8bObQzab/history?from=1601410000&to=1601427000
 Content-Type:application/json
 Body:none
@@ -293,7 +359,7 @@ Body:none
 
 回复
 
-```js
+```
 Response-Code: 200
 Body:
 {
@@ -376,7 +442,7 @@ result.xxxxx         | object  | 输出结果的其他状态值（仅限数值�
 
 请求
 
-```js
+```
 GET: {domain}/device/0361d124dabd4996/rzRe65wvKLlw4R1EV0KLHrYo8bObQzab/avg?from=1601410000&to=1601427000
 Content-Type:application/json
 Body:none
@@ -384,7 +450,7 @@ Body:none
 
 回复
 
-```js
+```
 Response-Code: 200
 Body:
 {
@@ -405,5 +471,4 @@ Body:
 }
 ```
 
-## 数据库
-采用TDengine时序数据库
+
