@@ -35,7 +35,7 @@ YunQiLink包括以下组成部分
 
 payload格式示例如下：
 
-```
+```js
 {
   "messageInfo":{
     "collectTime":"2020-05-14 23:27:49",
@@ -82,7 +82,7 @@ params包含设备状态，状态字段的值有两种类型，数值类型和�
 **domain**: 数采服务器地址，具体项目确定
 **pk**: Product Key。产品识别字符串，用来区分设备类型，不通类型产品pk不同，由字母，数字，'_', '-'组成
 **did**: Device ID。设备识别符，同一pk下的不同设备did不同，由字母，数字，'_', '-'组成。
-**appid**: Application ID。应用识别符，用来区分不同的应用程序，手机APP，微信小程序，其他平台等等，由字母，数字，'_', '-'组成。
+**appid**: Application ID。应用识别符，用来区分不同的应用程序，手机APP，微信小程序，其他平台等等，由字母，数字，`'_'`, '-'组成。
 **info**: 设备在绑定时，由YunQiLink附加在设备上的信息，如别名，备注，其他附加信息等，设备端并不同步存储info
 **status**: 设备的状态，由设备自身上报，用来指示设备的一些状态或配置信息，如转速、开关等，YunQiLink无法修改设备的status
 
@@ -164,7 +164,7 @@ Body:none
 
 回复
 
-```
+```js
 Response-Code: 200
 Body:
 {
@@ -214,7 +214,7 @@ Body:none
 
 请求
 
-```
+```js
 GET: {domain}/devices
 Content-Type:application/json
 Body:
@@ -280,7 +280,7 @@ Body:none
 
 回复
 
-```
+```js
 Response-Code: 200
 Body:
 {
@@ -359,7 +359,7 @@ Body:none
 
 回复
 
-```
+```js
 Response-Code: 200
 Body:
 {
@@ -450,7 +450,7 @@ Body:none
 
 回复
 
-```
+```js
 Response-Code: 200
 Body:
 {
