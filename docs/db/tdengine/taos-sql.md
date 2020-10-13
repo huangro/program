@@ -424,7 +424,165 @@ Query OK, 1 row(s) in set (0.000081s)
 ```
 
 
+### 8.7 TAOS SQL中特殊关键词
+> TBNAME： 在超级表查询中可视为一个特殊的标签，代表查询涉及的子表名
+> `_c0`: 表示表（超级表）的第一列
 
+小技巧：\
+获取一个超级表素有的子表名及相关的标签信息：
+```sql
+SELECT TBNAME, location FROM meters;
+```
+统计超级表下辖子表数量：
+```sql
+SELECT COUNT(TBNAME) FROM meters;
+```
+以上两个查询均只支持在Where条件子句中添加针对标签（TAGS）的过滤条件。例如：
+```sql
+taos> SELECT TBNAME, location FROM meters;
+             tbname             |            location            |
+==================================================================
+ d1004                          | Beijing.Haidian                |
+ d1003                          | Beijing.Haidian                |
+ d1002                          | Beijing.Chaoyang               |
+ d1001                          | Beijing.Chaoyang               |
+Query OK, 4 row(s) in set (0.000881s)
+taos> SELECT count(tbname) FROM meters WHERE groupId > 2;
+     count(tbname)     |
+========================
+                     2 |
+Query OK, 1 row(s) in set (0.001091s)
+```
+
+- 可以使用* 返回所有列，或指定列名。可以对数字列进行四则运算，可以给输出的列取列名
+- where语句可以使用各种逻辑判断来过滤数字值，或使用通配符来过滤字符串
+- 输出结果缺省按首列时间戳升序排序，但可以指定按降序排序(_c0指首列时间戳)。使用ORDER BY对其他字段进行排序为非法操作。
+- 参数LIMIT控制输出条数，OFFSET指定从第几条开始输出。LIMIT/OFFSET对结果集的执行顺序在ORDER BY之后。
+- 通过”>>"输出结果可以导出到指定文件
+
+### 8.8 支持的条件过滤操作
+|Operation|Note|Applicable Data Types|
+|---------|----|---------------------|
+|>|larger than|timestamp and all numeric types|
+|<|smaller than|timestamp and all numeric types|
+|>=|larger than or equal to|timestamp and all numeric types|
+|<=|smaller than or equal to|timestamp and all numeric types|
+|=|equal to|all types|
+|<>|not equal to|all types|
+|%|match with any char sequences|binary nchar|
+|_|match with a single char|binary nchar|
+
+1. 同时进行多个字段的范围过滤需要使用关键词AND进行连接不同的查询条件，暂不支持OR连接的不同列之间的查询过滤条件。
+2. 针对某一字段的过滤只支持单一时间区间过滤条件。但是针对其他的（普通）列或标签列，可以使用OR 条件进行组合条件的查询过滤。例如：((value > 20 and value < 30) OR (value < 12)) 。
+
+
+### 8.9 SQL示例
+- 对于下面的例子，表tb1用一下语句创建
+```sql
+CREATE TABLE tb1 (ts timestamp, col1 int, col2 float, col3 binary(50));
+```
+
+- 查询tb1刚过去的一小时的所有记录
+```sql
+SELECT * FROM tb1 WHERE ts >= NOW - 1h;
+```
+
+- 查询表tb1从`2018-06-01 08:00:00.000` 到`2018-06-02 08:00:00.000`时间范围，并且col3的字符串是'nny'结尾的记录，结果按照时间戳降序
+```sql
+SELECT * FROM tb1 WHERE ts > '2018-06-01 08:00:00.000' AND ts <= '2018-06-02 08:00:00.000' AND col3 LIKE '%nny' ORDER BY ts DESC;
+```
+
+- 查询col1与col2的和，并取名complex, 时间大于`2018-06-01 08:00:00.000`, col2大于1.2，结果输出仅仅10条记录，从第5条开始
+```sql
+SELECT (col1 + col2) AS 'complex' FROM tb1 WHERE ts > '2018-06-01 08:00:00.000' and col2 > 1.2 LIMIT 10 OFFSET 5;
+```
+
+- 查询过去10分钟的记录，col2的值大于3.14，并且将结果输出到文件 /home/testoutpu.csv.
+```sql
+SELECT COUNT(*) FROM tb1 WHERE ts >= NOW - 10m AND col2 > 3.14 >> /home/testoutpu.csv;
+```
+
+## 9. SQL函数
+### 9.1 聚合函数
+TDengine支持针对数据的聚合查询。提供支持的聚合和选择函数如下：
+- **COUNT**
+```sql
+SELECT COUNT([*|field_name]) FROM tb_name [WHERE clause];
+```
+功能说明：统计表/超级表中记录行数或某列的非空值个数。\
+返回结果数据类型：长整型INT64。\
+应用字段：应用全部字段。\
+适用于：表、超级表。\
+说明：
+  1. 可以使用星号来替代具体的字段，使用星号()返回全部记录数量。
+  2. 针对同一表的（不包含NULL值）字段查询结果均相同。
+  3. 如果统计对象是具体的列，则返回该列中非NULL值的记录数量。
+
+  示例：
+```sql
+taos> SELECT COUNT(*), COUNT(VOLTAGE) FROM meters;
+    count(*)        |    count(voltage)     |
+================================================
+                    9 |                     9 |
+Query OK, 1 row(s) in set (0.004475s)
+taos> SELECT COUNT(*), COUNT(VOLTAGE) FROM d1001;
+    count(*)        |    count(voltage)     |
+================================================
+                    3 |                     3 |
+Query OK, 1 row(s) in set (0.001075s)
+```
+
+- **AVG**
+```sql
+SELECT AVG(field_name) FROM tb_name [WHERE clause];
+```
+功能说明：统计表/超级表中某列的平均值。\
+返回结果数据类型：双精度浮点数Double。\
+应用字段：不能应用在timestamp、binary、nchar、bool字段。\
+适用于：表、超级表。\
+示例：
+```sql
+taos> SELECT AVG(current), AVG(voltage), AVG(phase) FROM meters;
+    avg(current)        |       avg(voltage)        |        avg(phase)         |
+====================================================================================
+            11.466666751 |             220.444444444 |               0.293333333 |
+Query OK, 1 row(s) in set (0.004135s)
+taos> SELECT AVG(current), AVG(voltage), AVG(phase) from d1001;
+    avg(current)        |       avg(voltage)        |        avg(phase)         |
+====================================================================================
+            11.733333588 |             219.333333333 |               0.316666673 |
+Query OK, 1 row(s) in set (0.000943s)
+```
+
+- **TWA**
+```sql
+SELECT TWA(field_name) FROM tb_name WHERE clause;
+```
+功能说明：时间加权平均函数。统计表/超级表中某列在一段时间内的时间加权平均。\
+返回结果数据类型：双精度浮点数Double。\
+应用字段：不能应用在timestamp、binary、nchar、bool类型字段。 说明：时间加权平均(time weighted average, TWA）查询需要指定查询时间段的 开始时间 和 结束时间 。 适用于：表、超级表。
+
+- **SUM**
+```sql
+SELECT SUM(field_name) FROM tb_name [WHERE clause];
+```
+功能说明：统计表/超级表中某列的和。\
+返回结果数据类型：双精度浮点数Double和长整型INT64。\
+应用字段：不能应用在timestamp、binary、nchar、bool类型字段。\
+适用于：表、超级表。\
+示例：
+```sql
+taos> SELECT SUM(current), SUM(voltage), SUM(phase) from meters;
+    sum(current)        |     sum(voltage)      |        sum(phase)         |
+================================================================================
+            103.200000763 |                  1984 |               2.640000001 |
+Query OK, 1 row(s) in set (0.001702s)
+taos> SELECT SUM(current), SUM(voltage), SUM(phase) from d1001;
+    sum(current)        |     sum(voltage)      |        sum(phase)         |
+================================================================================
+            35.200000763 |                   658 |               0.950000018 |
+Query OK, 1 row(s) in set (0.000980s)
+```
 
 
 
