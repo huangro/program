@@ -11,7 +11,7 @@ TAOS SQL是用户对TDengine进行数据写入和查询的主要工具。TAOS SQ
 - ... 表示前面的项可重复多个
 
 为更好地说明SQL语法的规则及其特点，本文假设存在一个数据集。以智能电表(meters)为例，假设每个智能电表采集电流、电压、相位三个量。其建模如下：
-```
+```sql
 taos> DESCRIBE meters;
              Field              |        Type        |   Length    |    Note    |
 =================================================================================
@@ -584,8 +584,353 @@ taos> SELECT SUM(current), SUM(voltage), SUM(phase) from d1001;
 Query OK, 1 row(s) in set (0.000980s)
 ```
 
+- **STDDEV**
+```sql
+SELECT STDDEV(field_name) FROM tb_name [WHERE clause];
+```
+功能说明：统计表中某列的均方差。\
+返回结果数据类型：双精度浮点数Double。\
+应用字段：不能应用在timestamp、binary、nchar、bool类型字段。\
+适用于：表。\
+示例：
+```sql
+taos> SELECT STDDEV(current) FROM d1001;
+    stddev(current)      |
+============================
+            1.020892909 |
+Query OK, 1 row(s) in set (0.000915s)
+```
+
+- **LEASTSQUARES**
+```sql
+SELECT LEASTSQUARES(field_name, start_val, step_val) FROM tb_name [WHERE clause];
+```
+功能说明：统计表中某列的值是主键（时间戳）的拟合直线方程。start_val是自变量初始值，step_val是自变量的步长值。\
+返回结果数据类型：字符串表达式（斜率, 截距）。\
+应用字段：不能应用在timestamp、binary、nchar、bool类型字段。\
+说明：自变量是时间戳，因变量是该列的值。\
+适用于：表。\
+示例：
+```sql
+taos> SELECT LEASTSQUARES(current, 1, 1) FROM d1001;
+            leastsquares(current, 1, 1)             |
+=====================================================
+{slop:1.000000, intercept:9.733334}                 |
+Query OK, 1 row(s) in set (0.000921s)
+```
+
+### 9.2 选择函数
+- **MIN**
+```sql
+SELECT MIN(field_name) FROM {tb_name | stb_name} [WHERE clause];
+```
+功能说明：统计表/超级表中某列的值最小值。\
+返回结果数据类型：同应用的字段。\
+应用字段：不能应用在timestamp、binary、nchar、bool类型字段。\
+示例：
+```sql
+taos> SELECT MIN(current), MIN(voltage) FROM meters;
+    min(current)     | min(voltage) |
+======================================
+            10.20000 |          218 |
+Query OK, 1 row(s) in set (0.001765s)
+taos> SELECT MIN(current), MIN(voltage) FROM d1001;
+    min(current)     | min(voltage) |
+======================================
+            10.30000 |          218 |
+Query OK, 1 row(s) in set (0.000950s)
+```
+
+- **MAX**
+```sql
+SELECT MAX(field_name) FROM { tb_name | stb_name } [WHERE clause];
+```
+功能说明：统计表/超级表中某列的值最大值。\
+返回结果数据类型：同应用的字段。\
+应用字段：不能应用在timestamp、binary、nchar、bool类型字段。\
+示例：
+```sql
+taos> SELECT MAX(current), MAX(voltage) FROM meters;
+    max(current)     | max(voltage) |
+======================================
+            13.40000 |          223 |
+Query OK, 1 row(s) in set (0.001123s)
+taos> SELECT MAX(current), MAX(voltage) FROM d1001;
+    max(current)     | max(voltage) |
+======================================
+            12.60000 |          221 |
+Query OK, 1 row(s) in set (0.000987s)
+```
+
+- **FIRST**
+```sql
+SELECT FIRST(field_name) FROM { tb_name | stb_name } [WHERE clause];
+```
+功能说明：统计表/超级表中某列的值最先写入的非NULL值。\
+返回结果数据类型：同应用的字段。\
+应用字段：所有字段。\
+说明：
+  1. 如果要返回各个列的首个（时间戳最小）非NULL值，可以使用FIRST(*)；
+  2. 如果结果集中的某列全部为NULL值，则该列的返回结果也是NULL；
+  3. 如果结果集中所有列全部为NULL值，则不返回结果。
+
+  示例：
+```sql
+  taos> SELECT FIRST(*) FROM meters;
+        first(ts)        |    first(current)    | first(voltage) |     first(phase)     |
+=========================================================================================
+2018-10-03 14:38:04.000 |             10.20000 |            220 |              0.23000 |
+Query OK, 1 row(s) in set (0.004767s)
+taos> SELECT FIRST(current) FROM d1002;
+    first(current)    |
+=======================
+            10.20000 |
+Query OK, 1 row(s) in set (0.001023s)
+  ```
+
+- **LAST**
+```sql
+SELECT LAST(field_name) FROM { tb_name | stb_name } [WHERE clause];
+```
+功能说明：统计表/超级表中某列的值最后写入的非NULL值。\
+返回结果数据类型：同应用的字段。\
+应用字段：所有字段。\
+说明：
+  1. 如果要返回各个列的最后（时间戳最大）一个非NULL值，可以使用LAST(*)；
+  2. 如果结果集中的某列全部为NULL值，则该列的返回结果也是NULL；如果结果集中所有列全部为NULL值，则不返回结果。
+
+  示例：
+```sql
+taos> SELECT LAST(*) FROM meters;
+        last(ts)         |    last(current)     | last(voltage) |     last(phase)      |
+========================================================================================
+2018-10-03 14:38:16.800 |             12.30000 |           221 |              0.31000 |
+Query OK, 1 row(s) in set (0.001452s)
+taos> SELECT LAST(current) FROM d1002;
+    last(current)     |
+=======================
+            10.30000 |
+Query OK, 1 row(s) in set (0.000843s)
+```
+
+- **TOP**
+```sql
+SELECT TOP(field_name, K) FROM { tb_name | stb_name } [WHERE clause];
+```
+功能说明： 统计表/超级表中某列的值最大k个非NULL值。若多于k个列值并列最大，则返回时间戳小的。\
+返回结果数据类型：同应用的字段。\
+应用字段：不能应用在timestamp、binary、nchar、bool类型字段。\
+说明：
+  1. k值取值范围1≤k≤100；
+  2. 系统同时返回该记录关联的时间戳列。
+
+  示例：
+```sql
+taos> SELECT TOP(current, 3) FROM meters;
+        ts            |   top(current, 3)    |
+=================================================
+2018-10-03 14:38:15.000 |             12.60000 |
+2018-10-03 14:38:16.600 |             13.40000 |
+2018-10-03 14:38:16.800 |             12.30000 |
+Query OK, 3 row(s) in set (0.001548s)
+taos> SELECT TOP(current, 2) FROM d1001;
+        ts            |   top(current, 2)    |
+=================================================
+2018-10-03 14:38:15.000 |             12.60000 |
+2018-10-03 14:38:16.800 |             12.30000 |
+Query OK, 2 row(s) in set (0.000810s)
+```
+
+- **BOTTOM**
+```sql
+SELECT BOTTOM(field_name, K) FROM { tb_name | stb_name } [WHERE clause];
+```
+功能说明：统计表/超级表中某列的值最小k个非NULL值。若多于k个列值并列最小，则返回时间戳小的。\
+返回结果数据类型：同应用的字段。\
+应用字段：不能应用在timestamp、binary、nchar、bool类型字段。\
+说明：
+  1. k值取值范围1≤k≤100；
+  2. 系统同时返回该记录关联的时间戳列。
+
+  示例：
+```sql
+taos> SELECT BOTTOM(voltage, 2) FROM meters;
+        ts            | bottom(voltage, 2) |
+===============================================
+2018-10-03 14:38:15.000 |                218 |
+2018-10-03 14:38:16.650 |                218 |
+Query OK, 2 row(s) in set (0.001332s)
+taos> SELECT BOTTOM(current, 2) FROM d1001;
+        ts            |  bottom(current, 2)  |
+=================================================
+2018-10-03 14:38:05.000 |             10.30000 |
+2018-10-03 14:38:16.800 |             12.30000 |
+Query OK, 2 row(s) in set (0.000793s)
+```
+
+- **PERCENTILE**
+```sql
+SELECT PERCENTILE(field_name, P) FROM { tb_name | stb_name } [WHERE clause];
+```
+功能说明：统计表中某列的值百分比分位数。\
+返回结果数据类型： 双精度浮点数Double。\
+应用字段：不能应用在timestamp、binary、nchar、bool类型字段。\
+说明：P值取值范围0≤P≤100，为0的时候等同于MIN，为100的时候等同于MAX。\
+示例：
+```sql
+taos> SELECT PERCENTILE(current, 20) FROM d1001;
+percentile(current, 20)  |
+============================
+            11.100000191 |
+Query OK, 1 row(s) in set (0.000787s)
+```
+
+- **APERCENTILE**
+```sql
+SELECT APERCENTILE(field_name, P) FROM { tb_name | stb_name } [WHERE clause];
+```
+功能说明：统计表中某列的值百分比分位数，与PERCENTILE函数相似，但是返回近似结果。\
+返回结果数据类型： 双精度浮点数Double。\
+应用字段：不能应用在timestamp、binary、nchar、bool类型字段。\
+说明：P值取值范围0≤P≤100，为0的时候等同于MIN，为100的时候等同于MAX。推荐使用APERCENTILE函数，该函数性能远胜于PERCENTILE函数
+```sql
+taos> SELECT APERCENTILE(current, 20) FROM d1001;
+apercentile(current, 20)  |
+============================
+            10.300000191 |
+Query OK, 1 row(s) in set (0.000645s)
+```
+
+- **LAST_ROW**
+```sql
+SELECT LAST_ROW(field_name) FROM { tb_name | stb_name };
+```
+功能说明：返回表（超级表）的最后一条记录。\
+返回结果数据类型：同应用的字段。\
+应用字段：所有字段。\
+说明：与last函数不同，last_row不支持时间范围限制，强制返回最后一条记录。\
+示例：
+```sql
+taos> SELECT LAST_ROW(current) FROM meters;
+last_row(current)   |
+=======================
+            12.30000 |
+Query OK, 1 row(s) in set (0.001238s)
+taos> SELECT LAST_ROW(current) FROM d1002;
+last_row(current)   |
+=======================
+            10.30000 |
+Query OK, 1 row(s) in set (0.001042s)
+```
+
+### 9.3 计算函数
+- **DIFF**
+```sql
+SELECT DIFF(field_name) FROM tb_name [WHERE clause];
+```
+功能说明：统计表中某列的值与前一行对应值的差。\
+返回结果数据类型： 同应用字段。\
+应用字段：不能应用在timestamp、binary、nchar、bool类型字段。\
+说明：输出结果行数是范围内总行数减一，第一行没有结果输出。\
+示例：
+```sql
+taos> SELECT DIFF(current) FROM d1001;
+        ts            |    diff(current)     |
+=================================================
+2018-10-03 14:38:15.000 |              2.30000 |
+2018-10-03 14:38:16.800 |             -0.30000 |
+Query OK, 2 row(s) in set (0.001162s)
+```
+
+- **SPREAD**
+```sql
+SELECT SPREAD(field_name) FROM { tb_name | stb_name } [WHERE clause];
+```
+功能说明：统计表/超级表中某列的最大值和最小值之差。\
+返回结果数据类型： 双精度浮点数。\
+应用字段：不能应用在binary、nchar、bool类型字段。\
+说明：可用于TIMESTAMP字段，此时表示记录的时间覆盖范围。\
+示例：
+```sql
+taos> SELECT SPREAD(voltage) FROM meters;
+    spread(voltage)      |
+============================
+            5.000000000 |
+Query OK, 1 row(s) in set (0.001792s)
+taos> SELECT SPREAD(voltage) FROM d1001;
+    spread(voltage)      |
+============================
+            3.000000000 |
+Query OK, 1 row(s) in set (0.000836s)
+```
+
+- **四则运算**
+```sql
+SELECT field_name [+|-|*|/|%][Value|field_name] FROM { tb_name | stb_name }  [WHERE clause];
+```
+功能说明：统计表/超级表中某列或多列间的值加、减、乘、除、取余计算结果。\
+返回结果数据类型：双精度浮点数。\
+应用字段：不能应用在timestamp、binary、nchar、bool类型字段。\
+说明：
+  1. 支持两列或多列之间进行计算，可使用括号控制计算优先级;
+  2. NULL字段不参与计算，如果参与计算的某行中包含NULL，该行的计算结果为NULL。
+
+  ```sql
+taos> SELECT current + voltage * phase FROM d1001;
+(current+(voltage*phase)) |
+============================
+            78.190000713 |
+            84.540003240 |
+            80.810000718 |
+Query OK, 3 row(s) in set (0.001046s)
+```
+
+## 10. 时间维度聚合
+TDengine支持按时间段进行聚合，可以将表中数据按照时间段进行切割后聚合生成结果，比如温度传感器每秒采集一次数据，但需查询每隔10分钟的温度平均值。这个聚合适合于降维(down sample)操作, 语法如下：
+```sql
+SELECT function_list FROM tb_name 
+  [WHERE where_condition]
+  INTERVAL (interval [, offset])
+  [FILL ({NONE | VALUE | PREV | NULL | LINEAR})]
+SELECT function_list FROM stb_name 
+  [WHERE where_condition]
+  INTERVAL (interval [, offset])
+  [FILL ({ VALUE | PREV | NULL | LINEAR})]
+  [GROUP BY tags]
+```
+
+- 聚合时间段的长度由关键词INTERVAL指定，最短时间间隔10毫秒（10a），并且支持偏移（偏移必须小于间隔）。聚合查询中，能够同时执行的聚合和选择函数仅限于单个输出的函数：count、avg、sum 、stddev、leastsquares、percentile、min、max、first、last，不能使用具有多行输出结果的函数（例如：top、bottom、diff以及四则运算）。
+- WHERE语句可以指定查询的起止时间和其他过滤条件
+- FILL语句指定某一时间区间数据缺失的情况下的填充模式。填充模式包括以下几种：
+  - 不进行填充：NONE(默认填充模式)。
+  - VALUE填充：固定值填充，此时需要指定填充的数值。例如：fill(value, 1.23)。
+  - NULL填充：使用NULL填充数据。例如：fill(null)。
+  - PREV填充：使用前一个非NULL值填充数据。例如：fill(prev)。
+
+说明：
+1. 使用FILL语句的时候可能生成大量的填充输出，务必指定查询的时间区间。针对每次查询，系统可返回不超过1千万条具有插值的结果。
+2. 在时间维度聚合中，返回的结果中时间序列严格单调递增。
+3. 如果查询对象是超级表，则聚合函数会作用于该超级表下满足值过滤条件的所有表的数据。如果查询中没有使用group by语句，则返回的结果按照时间序列严格单调递增；如果查询中使用了group by语句分组，则返回结果中每个group内不按照时间序列严格单调递增。
+
+**示例:** 智能电表的建表语句如下：
+```sql
+CREATE TABLE meters (ts timestamp, current float, voltage int, phase float) TAGS (location binary(64), groupId int);
+```
+针对智能电表采集的数据，以10分钟为一个阶段，计算过去24小时的电流数据的平均值、最大值、电流的中位数、以及随着时间变化的电流走势拟合直线。如果没有计算值，用前一个非NULL值填充。 使用的查询语句如下：
+```sql
+SELECT AVG(current),MAX(current),LEASTSQUARES(current, start_val, step_val), PERCENTILE(current, 50) FROM meters
+  WHERE TS>=NOW-1d
+  INTERVAL(10m)
+  FILL(PREV);
+```
+
+## 11. TAOS SQL边界限制
+- 表名最大长度为193，每行数据最大长度16k个字符
+- 列名最大长度为65，最多允许1024列，最少需要2列，第一列必须是时间戳
+- 标签最多允许128个，可以0个，标签总长度不超过16k个字符
+- SQL语句最大长度65480个字符，但可通过系统配置参数maxSQLLength修改，最长可配置为1M
+- 库的数目，超级表的数目、表的数目，系统不做限制，仅受系统资源限制
 
 
-
-## 备注
+## 12. 备注
 原文地址：https://www.taosdata.com/cn/documentation20/taos-sql/
