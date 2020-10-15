@@ -25,7 +25,7 @@ YunQiLink包括以下组成部分
 
 ### MQTT broker
 
-选择Moquette 0.12
+选择Moquette 0.12 [说明文档](https://moquette-io.github.io/moquette/documentation.html)
 
 为支持之前的数据采集功能，设备上传采用Publish，topic为
 
