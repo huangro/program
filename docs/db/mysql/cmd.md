@@ -68,3 +68,61 @@ revoke privilege on monitor.user from 'ups'@'192.168.1.101';
 revoke select on *.* from 'ups'@'%';
 ```
 
+**注意：**
+假如你再给用户'pig'@'%'授权的时候是这样的（或类似的）：
+```sql
+grant select on monitor.user to 'ups'@'%';
+```
+则再使用：
+```sql
+revoke select on *.* from 'ups'@'%';
+```
+命令并不能撤销该用户对monitor数据库中user表的select操作。
+相反，如果授权使用的是：
+```sql
+grant select on *.* to 'ups'@'%';
+```
+则：
+```sql
+revoke select on monitor.user from 'ups'@'%';
+```
+命令也不能撤销该用户对monitor数据库中的user表的select权限。
+具体信息可以用命令：
+```sql
+show grants for 'ups'@'%';
+```
+查看。
+
+### 2.3 修改密码
+命令：
+```sql
+mysqladmin - h localhost -uroot -p password 123456;
+```
+或者：
+```sql
+use mysql;
+update user set password=password('123456') where user='root';
+exit;
+```
+若忘记root密码，则编辑/etc/my.cnf文件，添加skip-grant-tables，内容如下：
+```
+[mysqld]
+skip-grant-tables
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock
+```
+重启mysql：
+```bash
+service mysqld restart
+```
+可以无密码登录，然后修改root密码：
+```sql
+use mysql;
+update user set authentication_string=password('123456') where user='root';
+flush privileges;
+exit;
+```
+然后删除skip-grant-tables并重启mysql。
+
+
+
