@@ -2,6 +2,7 @@
     * [概述](pm/java/)
     * [基础](pm/java/basic/)
       * [MapStruct](pm/java/basic/mapstruct)
+      * [MyBatis](pm/java/basic/mybatis)
     * [框架](pm/java/framework/dubbo/dubbo3)
       * [Dubbo](pm/java/framework/dubbo/dubbo3)
         * [Dubbo3.0前瞻](pm/java/framework/dubbo/dubbo3)
