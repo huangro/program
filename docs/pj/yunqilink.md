@@ -109,6 +109,107 @@ GET | {domain}/device/{pk}/{did}/min     | 获取指定设备最小值
 GET | {domain}/device/{pk}/{did}/avg     | 获取指定设备平均值
 GET | {domain}/device/{pk}/{did}/diff    | 获取指定设备差值
 
+### 绑定设备
+
+为此用户绑定具体设备，必须提供pk和did参数，二者结合是全局唯一。
+
+请求地址及方式
+
+    POST
+    {domain}/devices
+
+请求参数
+
+参数|类型|必填|参数类型|描述
+----|----|----|--------|----
+Application-Id | string  | 是 | header| appid。*嘉顺暂时不实现*
+Authorization  | string  | 是 | header| 用户token。*嘉顺暂时不实现*
+Timestamp      | string  | 是  | header| 请求时间戳，与服务器相差不能超过 5 分钟。*嘉顺暂时不实现*
+Signature      | string  | 是  | header| 签名，计算方法为 lower(md5(ps + Timestamp))。*嘉顺暂时不实现*
+pk             | string  | 是 | body  | 设备的pk
+did            | string  | 是 | body  | 设备ID
+info           | object  | 否 | body  | 设备的绑定信息
+info._alias    | string  | 否 | body  | 设备别名
+info._remark   | string  | 否 | body  | 设备备注
+schema         | array   | 是 | body  | 设备模型
+schema.column  | string  | 是 | body  | 设备上传的status字段名
+schema.type    | string  | 是 | body  | 设备上传的status字段类型
+
+响应参数
+
+参数|类型|描述
+----|----|----
+device                  | array   | 绑定的设备列表
+device.did              | string  | 设备ID
+device.pk               | string  | 产品Product Key
+device.info             | object  | 设备的绑定信息
+device.info._alias      | string  | 设备别名
+device.info._remark     | string  | 设备备注
+
+- 示例一
+
+获取所有设备的实时数据
+
+请求
+
+```js
+POST: {domain}/devices
+Content-Type:application/json
+Body:
+{
+  "did":"rzRe65wvKLlw4R1EV0KLHrYo8bObQzab",
+  "pk":"0361d124dabd4996",
+  "info":{
+    "_alias":"二车间5号",
+    "_remark":"TOSHIBA-200数控机床，2005年引进",
+  },
+  "schema": [
+    {"column":"status", "type":"int(2)"},
+    {"column":"address", "type": "nchar(255)"},
+    ...
+  ]
+}
+```
+
+回复
+
+```js
+Response-Code: 200
+Body:
+{
+  device:{
+    "did":"rzRe65wvKLlw4R1EV0KLHrYo8bObQzab",
+    "pk":"0361d124dabd4996",
+    "info":{
+      "_alias":"二车间5号",
+      "_remark":"TOSHIBA-200数控机床，2005年引进",
+    }
+  }
+}
+```
+
+### 解绑设备
+
+请求地址及方式
+
+    DELETE
+    {domain}/device/{pk}/{did}
+
+请求参数
+
+参数|类型|必填|参数类型|描述
+----|----|----|--------|----
+Application-Id | string  | 是 | header| appid。*嘉顺暂时不实现*
+Authorization  | string  | 是 | header| 用户token。*嘉顺暂时不实现*
+pk             | string  | 是 | path  | 指定设备的pk
+did            | string  | 是 | path  | 指定设备的did
+
+响应参数
+
+无
+
+
+
 ### 获取设备列表
 
 获取此用户下所有产品的绑定设备列表。如果需要对多个产品有筛选，依据对appid的判断。
