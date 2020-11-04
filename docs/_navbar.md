@@ -13,6 +13,6 @@
 * [项目](pj/auth)
 * [工具]()
   * [Auto.js](tl/auto.js/)
-  * [uni-app](ts/uniapp/)
+  * [uni-app](tl/uniapp/)
 * [阅读]()
   * [书籍](rd/book/)
